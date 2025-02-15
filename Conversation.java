@@ -2,6 +2,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Random;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A simple chatbot that has a conversation with the user
@@ -18,6 +20,7 @@ class Conversation implements Chatbot {
   private List<String> transcript;
   private String[] responses;
   private Random random;
+  private Map<String, String> mirrorWords;
   /**
    * Constructor 
    */
@@ -36,8 +39,27 @@ class Conversation implements Chatbot {
       "Good to know!"
     }; 
     this.random = new Random();
+    this.mirrorWords = new HashMap<>();
+    initializeMirrorWords();
   }
 
+  /**
+   * Initializes the mirrorWords map with words and their mirrored counterparts
+   */
+  private void initializeMirrorWords() {
+    mirrorWords.put("I", "you");
+    mirrorWords.put("we", "you");
+    mirrorWords.put("me", "you");
+    mirrorWords.put("my", "your");
+    mirrorWords.put("mine", "yours");
+    mirrorWords.put("am", "are");
+    mirrorWords.put("I'm", "you're");
+    mirrorWords.put("you", "I");
+    mirrorWords.put("your", "my");
+    mirrorWords.put("yours", "mine");
+    mirrorWords.put("are", "am");
+    mirrorWords.put("you're", "I'm");
+  }
   /**
    * Starts and runs the conversation with the user
    * Asks the user how many rounds they want to chat for
@@ -84,10 +106,49 @@ class Conversation implements Chatbot {
    * @return mirrored or canned response to user input  
    */
   public String respond(String inputString) {
-    int index = random.nextInt(responses.length);
-    return responses[index]; 
+    //Check for punctuation at the end of the input
+    String punctuation = "";
+    if (inputString.endsWith(".") || inputString.endsWith("!") || inputString.endsWith("?")){
+      punctuation = inputString.substring(inputString.length() - 1);
+      inputString = inputString.substring(0, inputString.length() - 1);
+    }
+
+    String[] words = inputString.split(" ");
+    StringBuilder response = new StringBuilder();
+    boolean mirrored = false;
+
+    for (String word : words) {
+      String mirroredWord = mirrorWords.getOrDefault(word, word);
+      if (!mirroredWord.equals(word)){
+        mirrored = true;
+      }
+      response.append(mirroredWord).append(" ");
   }
 
+  //If the response is mirrored, add punctuation to the end of the response
+  String finalResponse;
+  if (punctuation.equals("?")){
+    finalResponse = response.toString().trim() + "? I don't know. What do you think?";
+  } else if (mirrored) {
+    if (punctuation.equals(".") || punctuation.equals("!")) {
+      punctuation = "?";
+    }
+    finalResponse = response.toString().trim() + punctuation;
+  } else {
+    int index = random.nextInt(responses.length);
+    finalResponse =  responses[index];
+    }
+  
+  //Capitalize the first letter of the response
+  if (finalResponse.length() > 0) {
+    finalResponse = finalResponse.substring(0, 1).toUpperCase() + finalResponse.substring(1);
+  }
+  return finalResponse;
+}
+
+  /**
+   * Main method to run the conversation
+   */
   public static void main(String[] arguments) {
     Conversation myConversation = new Conversation();
     myConversation.chat();
