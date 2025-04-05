@@ -8,8 +8,8 @@ import java.util.Map;
 /**
  * A simple chatbot that has a conversation with the user
  * The chatbot will ask the user how many rounds they want to chat for
- * The chatbot will then ask the user "What's on your mind?" and respond with a canned response
- * The chatbot will then ask the user for input and respond with a canned response
+ * The chatbot will then ask the user "What's on your mind?" and wait for input
+ * The chatbot will respond with a mirrored responses or a canned response
  * The chatbot will continue to ask for input and respond until the number of rounds is reached
  * The chatbot will then say "See ya!" and print the transcript of the conversation
  */
@@ -21,6 +21,7 @@ class Conversation implements Chatbot {
   private String[] responses;
   private Random random;
   private Map<String, String> mirrorWords;
+
   /**
    * Constructor 
    */
@@ -47,19 +48,15 @@ class Conversation implements Chatbot {
    * Initializes the mirrorWords map with words and their mirrored counterparts
    */
   private void initializeMirrorWords() {
-    mirrorWords.put("I", "you");
-    mirrorWords.put("we", "you");
+    mirrorWords.put("i", "you");
     mirrorWords.put("me", "you");
     mirrorWords.put("my", "your");
-    mirrorWords.put("mine", "yours");
     mirrorWords.put("am", "are");
-    mirrorWords.put("I'm", "you're");
+    mirrorWords.put("are", "am");
     mirrorWords.put("you", "I");
     mirrorWords.put("your", "my");
-    mirrorWords.put("yours", "mine");
-    mirrorWords.put("are", "am");
-    mirrorWords.put("you're", "I'm");
   }
+
   /**
    * Starts and runs the conversation with the user
    * Asks the user how many rounds they want to chat for
@@ -87,7 +84,6 @@ class Conversation implements Chatbot {
 
     scanner.close();
   }
-
 
   /**
    * Prints transcript of conversation
@@ -118,11 +114,21 @@ class Conversation implements Chatbot {
     boolean mirrored = false;
 
     for (String word : words) {
-      String mirroredWord = mirrorWords.getOrDefault(word, word);
-      if (!mirroredWord.equals(word)){
+      //Convert the word to lowercase for case-insensitive matching
+      String lowerCaseWord = word.toLowerCase();
+      String mirroredWord = mirrorWords.get(lowerCaseWord);
+
+      if (mirroredWord != null) {
         mirrored = true;
+
+        //Preserve the case of the first letter of the original word
+        if (Character.isUpperCase(word.charAt(0))) {
+          mirroredWord = mirroredWord.substring(0, 1).toUpperCase() + mirroredWord.substring(1);
+        } 
+        response.append(mirroredWord).append(" ");
+      } else{
+        response.append(word).append(" ");
       }
-      response.append(mirroredWord).append(" ");
   }
 
   //If the response is mirrored, add punctuation to the end of the response
@@ -130,11 +136,12 @@ class Conversation implements Chatbot {
   if (punctuation.equals("?")){
     finalResponse = response.toString().trim() + "? I don't know. What do you think?";
   } else if (mirrored) {
-    if (punctuation.equals(".") || punctuation.equals("!")) {
-      punctuation = "?";
+    if (punctuation.isEmpty()) {
+      punctuation = "."; // Default punctuation if no punctuation is found
     }
     finalResponse = response.toString().trim() + punctuation;
   } else {
+    // If the response is not mirrored, select a random canned response
     int index = random.nextInt(responses.length);
     finalResponse =  responses[index];
     }
